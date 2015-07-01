@@ -87,10 +87,22 @@ enter::
   tryagain_setn:
    sleep, 50
    ControlGetText, setn_scanned, WindowsForms10.EDIT.app.0.259f9d23
+   ;~ if (setn_scanned="") { 
+    ;~ try_count += 1
+    ;~ if (try_count <= 5)
+      ;~ goto, tryagain_setn
+   ;~ }
    
   if (DebugInfo = "Y") 
     FileAppend ,02 - %setn_scanned%`n, %DebugFile%
-    
+  ;~ if (setn_scanned="") {
+   ;~ ControlGet, MES_LOG, List, ,WindowsForms10.LISTBOX.app.0.259f9d21, Hazel
+   ;~ StringGetPos, test_ng, MES_LOG, Test NG - ,, 0
+   ;~ if (test_ng >= 0) {
+    ;~ Return
+   ;~ }
+  ;~ }
+   
   Result := "" 
   Fail_Code:= ""
   Fail_Desc:= ""
@@ -133,11 +145,13 @@ enter::
      
      ControlGet, MES_LOG, List, ,WindowsForms10.LISTBOX.app.0.259f9d21, Hazel
      
+     ;~ MES_LOG := "[Retry Question Message Box] Do you want to test again?`n[Retry Question Message Box] NORegistered failure board - C262`n>> [Test NG] was happened."
   ;-=-=-=-=-=-=-=-=-=-=-=-GET CODE-=-=-=-=-=-=-=-=-=-=-=-=-
      StringGetPos, pos_code, MES_LOG, Registered failure board - ,, 0
       if (DebugInfo = "Y") 
        FileAppend ,06 - %pos_code%`n, %DebugFile% 
      if (pos_code >= 0) {
+       ;~ msgbox %pos_code%
        StringMid, Fail_Code, MES_LOG, pos_code+28, 5
        StringReplace, Fail_Code, Fail_Code, `n, , All
        if (DebugInfo = "Y") 
@@ -147,6 +161,7 @@ enter::
         if (DebugInfo = "Y") 
          FileAppend ,08 - %Fail_Desc%`n, %DebugFile% 
         
+
         fail_count+=1
         IniWrite, %fail_count%, config.ini, INTERFACE, FAIL_COUNT
         
@@ -158,6 +173,7 @@ enter::
           IniWrite, sequential_defect, %path_alert_record%Alert.ini, %Model%, %StationName%%JigN%
         }
         ;==========================================================
+     ;~ msgbox %Fail_Code%
        }
      }
      else {
@@ -166,6 +182,9 @@ enter::
       return
      }
   ;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-    
+    ;~ if (setn_scanned="") {
+     ;~ return
+    ;~ }
    }
  
   FormatTime, date , , yyyy-MM-dd
@@ -223,14 +242,19 @@ enter::
   GuiControl, ,fpy, %fpy%
   
   ;==========Alert by Yield=============
+  ;IniRead, yld_value, config.ini, ALERT, YLD_VALUE
+  ;~ IniRead, yld_value, config.ini, ALERT, YLD_VALUE
+;~ IniRead, yld_target, config.ini, ALERT, YLD_TARGET
   if(yld_alert_enable="Y") {
    IniWrite, %yld_value%, config.ini, ALERT, YLD_VALUE
    if (yld_value < yld_target)
     yld_target_t := yld_target . "%"
     IniWrite, yield_alert, %path_alert_record%Alert.ini, %Model%, %StationName%%JigN%   
-}
+   ;~ IniWrite, The FPY in the in the %JigN% of Station %StationName% on %Model% is below of the target (%yld_target_t%) with %fpy%, %path_alert_record%Alert.ini, %Model%, %StationName%%JigN%
+  }
 
   ;============================
+;Msgbox %date% / %time% / %setn_scanned%
  }
  else 
    send {enter}
